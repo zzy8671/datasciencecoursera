@@ -45,8 +45,6 @@ final$activity <- factor(final$activity, levels = activityName[,1], labels = act
 ## 4. Appropriately labels the data set with descriptive variable names.
 
 ## step 1:
-names(final) <- gsub("^t", "time", names(final))
-names(final) <- gsub("^f", "frequence", names(final))
 names(final) <- gsub("-mean", "Mean", names(final))
 names(final) <- gsub("-std", "Std", names(final))
 
