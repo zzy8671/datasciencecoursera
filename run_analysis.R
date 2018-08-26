@@ -1,58 +1,72 @@
-## 1. Merge the training and the test sets to create one data set.
+# Getting and Cleaning Data Course Project
 
-## step 1: download zip file from website
-if(!file.exists("./data")) dir.create("./data")
+## Step 0: download and upzip zip files
+getwd()
+setwd("./Course Project")
 fileUrl <- "https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip"
-download.file(fileUrl, destfile = "./data/projectData_getCleanData.zip")
+download.file(fileUrl, destfile = "./dataset.zip")
+unzip(zipfile = "./dataset.zip")
 
-## step 2: unzip data
-unzip <- unzip("./data/projectData_getCleanData.zip")
+## Step 1: merges the training and the test sets to create one data set
 
-## step 3: load data into R
-train data
-train.x <- read.table("./data/UCI HAR Dataset/train/X_train.txt")
-train.y <- read.table("./data/UCI HAR Dataset/train/y_train.txt")
-train.subject <- read.table("./data/UCI HAR Dataset/train/subject_train.txt")
+### Read data
+xtrain<- read.table("UCI HAR Dataset/train/X_train.txt")
+ytrain<- read.table("UCI HAR Dataset/train/Y_train.txt")
+subjecttrain <-read.table("UCI HAR Dataset/train/subject_train.txt")
 
-test data
-test.x <- read.table("./data/UCI HAR Dataset/test/X_test.txt")
-test.y <- read.table("./data/UCI HAR Dataset/test/y_test.txt")
-test.subject <- read.table("./data/UCI HAR Dataset/test/subject_test.txt")
+xtest<- read.table("UCI HAR Dataset/test/X_test.txt")
+ytest<- read.table("UCI HAR Dataset/test/Y_test.txt")
+subjecttest <-read.table("UCI HAR Dataset/test/subject_test.txt")
 
-## step 4: merge train and test data
-trainData <- cbind(train.subject, train.y, train.x)
-testData <- cbind(test.subject, test.y, test.x)
-fullData <- rbind(trainData, testData)
+features<-read.table("UCI HAR Dataset/features.txt")
+activity<-read.table("UCI HAR Dataset/activity_labels.txt")
 
---------------------------------------------------------------------------------
-## 2. Extract only the measurements on the mean and standard deviation for each measurement. 
+dim(xtrain)
+dim(ytrain)
+dim(xtest)
+dim(ytest)
+dim(subjecttrain)
+dim(subjecttest)
+dim(features)
+dim(activity)
 
-## step 1:  extract mean and standard deviation of each measurements
-featureIndex <- grep(("mean\\(\\)|std\\(\\)"), features[,2])
-final <- fullData[, c(1, 2, featureIndex+2)]
-colnames(final) <- c("subject", "activity", featureName[featureIndex])
+### merge train, test and subject data
+x<-rbind(xtrain, xtest)
+y<-rbind(ytrain, ytest)
+subject<-rbind(subjecttrain, subjecttest)
+z<-cbind(x, y, subject)
+dim(x)
+dim(y)
+dim(subject)
+dim(z)
 
--------------------------------------------------------------------------------
-## 3. Uses descriptive activity names to name the activities in the data set
+## Step 2: extracts only the measurements on the mean and standard deviation for each measurement
+locator <- grep("mean\\(\\)|std\\(\\)", features[,2]) 
+locator
+length(locator)
+x <- x[,locator]
+dim(x)
 
-## step 1: load activity data into R
-activityName <- read.table("./data/UCI HAR Dataset/activity_labels.txt")
+## Step 3: uses descriptive activity names to name the activities in the data set
+y$activity_name <- activity[y[,1] ,2] #look up y[,1] in activity [,2]
+head(y)
 
-## step 2: replace 1 to 6 with activity names
-final$activity <- factor(final$activity, levels = activityName[,1], labels = activityName[,2])
+## Step 4: appropriately labels the data set with descriptive variable names
+xcolnames <- features[locator,2]
+names(x) <- xcolnames
+names(subject) <- "subject_id"
+names(y) <- c("activity_label", "activity_name")
+cleandata <- cbind(subject, y, x)
+colnames(cleandata)
+head(cleandata)
 
--------------------------------------------------------------------------------
-## 4. Appropriately labels the data set with descriptive variable names.
+## Step 5: from the data set in step 4, creates a second, independent tidy data set with the average of each variable for each activity and each subject
+library(dplyr)
+class(cleandata)
+cleandata_2 <- data.table(cleandata)
+colnames(cleandata_2)
+tidydata <- ddply(cleandata_2, c("subject_id","activity_name"), numcolwise(mean))
+head(tidydata)
+dim(tidydata)
+write.table(tidydata, file = "./tidydata.txt", row.name=FALSE)
 
-## step 1:
-names(final) <- gsub("-mean", "Mean", names(final))
-names(final) <- gsub("-std", "Std", names(final))
-
--------------------------------------------------------------------------------
-## 5. From the data set in step 4, creates a second, independent tidy data set with the average of each variable for each activity and each subject.
-
-##step 1:
-CleanedData<-data.table(final)
-TidyData <- CleanedData[, lapply(.SD, mean), by = 'subject, activity']
-
-write.table(TidyData, file = "Tidy.txt", row.names = FALSE)
